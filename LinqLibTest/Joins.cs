@@ -225,6 +225,44 @@ namespace LinqLibTest
             Assert.AreEqual(countOfOwnersWithoutPets, 2);            
             Assert.AreEqual(petNameOfOwnerJoe, "Barley");
         }
+
+        [TestMethod]
+        public void Test_Query_Join_Outer_Left_Compound__Right_Clear()
+        {
+            // Example of a left outer join, using query expression
+            // and anonymous types, of People to Pets, and
+            // because there are no pets, all 4 people
+            // will be without a pet.
+
+            Pets.Clear();
+
+            var owners =
+                from person in People
+                join pet in Pets
+                on new
+                {
+                    person.Id,
+                    person.Age,
+                }
+                equals new
+                {
+                    pet.Id,
+                    Age = pet.Age * 2, // when owner is twice age of pet
+                }
+                into pets
+                from pet in pets.DefaultIfEmpty()
+                select new PetOwner
+                {
+                    Person = person,
+                    Pet = pet,
+                };
+
+            var countOfOwnersWithoutPets = owners.Count(o => o.Pet is null);
+            var petNameOfOwnerJoe = owners.FirstOrDefault(o => o.Person.Name == "Joe").Pet?.Name;
+
+            Assert.AreEqual(countOfOwnersWithoutPets, 4);
+            Assert.IsNull(petNameOfOwnerJoe);
+        }
     }
 
 }
